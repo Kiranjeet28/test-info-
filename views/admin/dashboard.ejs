@@ -5,6 +5,7 @@
   <title>Admin Dashboard | InfoCascade</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.0/dist/quill.snow.css" rel="stylesheet" />
   <style>
     :root {
       --primary-color: #4e73df;
@@ -110,7 +111,8 @@
         </div>
         <div class="mb-4">
           <label class="form-label fw-bold">Notice Content</label>
-          <textarea name="content" class="form-control" rows="5" placeholder="Write notice content here..." required></textarea>
+          <div id="editorContainer" style="height: 300px; background: white; border: 1px solid #ccc; border-radius: 4px;"></div>
+          <input type="hidden" name="content" id="contentInput">
         </div>
         <button type="submit" class="btn btn-primary">
           <i class="fas fa-paper-plane me-1"></i>Post Notice
@@ -135,7 +137,7 @@
               <div class="d-flex justify-content-between">
                 <div class="w-75">
                   <h5 class="fw-bold mb-2"><%= notice.title %></h5>
-                  <p class="mb-3"><%= notice.message %></p>
+                  <div class="mb-3"><%- notice.message %></div>
                   <div class="notice-date">
                     <i class="fas fa-user me-1"></i>
                     Posted by <%= notice.postedBy && notice.postedBy.name ? notice.postedBy.name : 'Admin' %> 
@@ -218,6 +220,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/quill@2.0.0/dist/quill.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const filterInput = document.getElementById('userFilterInput');
@@ -233,6 +236,32 @@
               row.style.display = 'none';
             }
           });
+        });
+      }
+
+      // Initialize Quill editor
+      const quill = new Quill('#editorContainer', {
+        theme: 'snow',
+        modules: {
+          toolbar: [
+            ['bold', 'italic', 'underline', 'strike'],        // text formatting
+            ['blockquote', 'code-block'],                      // block formatting
+            [{ 'header': 1 }, { 'header': 2 }],               // headers
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],     // lists
+            ['link', 'image'],                                 // links & images
+            ['clean']                                          // remove formatting
+          ]
+        },
+        placeholder: 'Enter notice content with formatting...'
+      });
+
+      // Before form submit, populate hidden input with editor content
+      const form = document.querySelector('form'); // adjust if multiple forms
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          const content = quill.root.innerHTML;
+          document.getElementById('contentInput').value = content;
+          // form submits normally with rich HTML in 'content' field
         });
       }
     });
