@@ -283,10 +283,15 @@ router.get('/logout', (req, res) => {
 router.post('/register',
   [
     body('name').trim().notEmpty().withMessage('Name is required.'),
-    body('email').isEmail().withMessage('Valid email is required.'),
+    body('email').trim().isEmail().withMessage('Valid email is required.').custom((value) => {
+      if (!String(value).toLowerCase().endsWith('@gmail.com')) {
+        throw new Error('Email must be a Gmail address (@gmail.com).');
+      }
+      return true;
+    }),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters.'),
-    body('urn').matches(/^[0-9]+$/).withMessage('URN must be numeric.'),
-    body('crn').matches(/^[0-9]+$/).withMessage('CRN must be numeric.'),
+    body('urn').matches(/^\d{7}$/).withMessage('URN must be exactly 7 digits.'),
+    body('crn').matches(/^\d{7}$/).withMessage('CRN must be exactly 7 digits.'),
     body('group').trim().notEmpty().withMessage('Group is required.'),
     body('department').trim().notEmpty().withMessage('Department is required.')
   ],
@@ -295,7 +300,8 @@ router.post('/register',
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const { name, email, password, urn, crn, group, department } = req.body;
+    const { name, password, urn, crn, group, department } = req.body;
+    const email = String(req.body.email).trim().toLowerCase();
     const groups = getGroupsByDepartment(department);
     if (!groups.includes(group)) {
       return res.status(400).json({ error: 'Selected group does not belong to selected department.' });
@@ -315,7 +321,12 @@ router.post('/register',
 // Student login POST
 router.post('/login',
   [
-    body('email').isEmail().withMessage('Valid email is required.'),
+    body('email').trim().isEmail().withMessage('Valid email is required.').custom((value) => {
+      if (!String(value).toLowerCase().endsWith('@gmail.com')) {
+        throw new Error('Email must be a Gmail address (@gmail.com).');
+      }
+      return true;
+    }),
     body('password').notEmpty().withMessage('Password is required.')
   ],
   async (req, res) => {
@@ -323,7 +334,8 @@ router.post('/login',
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const { email, password } = req.body;
+    const email = String(req.body.email).trim().toLowerCase();
+    const { password } = req.body;
     const user = await User.findOne({ email });
     if (!user || !user.password) {
       return res.status(401).json({ error: 'Invalid credentials.' });

@@ -57,10 +57,13 @@ router.post('/login', async (req, res) => {
 router.get('/dashboard', requireAdminJWT, async (req, res) => {
   const notices = await Notice.find().sort({ date: -1 });
   const users = await User.find();
+  const Feedback = require('../models/Feedback');
+  const feedbacks = await Feedback.find().sort({ createdAt: -1 });
   res.render('admin/dashboard', {
     admin: req.admin,
     notices,
-    users
+    users,
+    feedbacks
   });
 });
 

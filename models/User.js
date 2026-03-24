@@ -15,9 +15,9 @@ const userSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: function(v) {
-        return /^\d+$/.test(v);
+        return /^\d{7}$/.test(v);
       },
-      message: props => `${props.value} is not a valid URN. Only numbers are allowed.`
+      message: 'URN must be exactly 7 digits.'
     }
   },
   crn: {
@@ -25,9 +25,9 @@ const userSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: function(v) {
-        return /^\d+$/.test(v);
+        return /^\d{7}$/.test(v);
       },
-      message: props => `${props.value} is not a valid CRN. Only numbers are allowed.`
+      message: 'CRN must be exactly 7 digits.'
     }
   },
   group: { type: String },

@@ -60,11 +60,14 @@ app.use((req, res, next) => {
 });
 
 // Routes
+
 const adminRoutes = require('./routes/admin');
 const userRoutes = require('./routes/user');
+const feedbackRoutes = require('./routes/feedback');
 
 app.use('/admin', adminRoutes); // Admin dashboard
 app.use('/', userRoutes);       // Home + subscription
+app.use('/feedback', feedbackRoutes); // Feedback API
 
 // Timezone configuration
 app.locals.formatIST = function(date) {

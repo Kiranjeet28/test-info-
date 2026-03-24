@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Student Registration | InfoCascade</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body class="bg-light">
   <div class="container py-5">
@@ -16,7 +17,6 @@
           </div>
           <div class="card-body p-4">
             <form action="/register" method="POST" id="registerForm">
-                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <div class="row g-3">
                 <div class="col-md-6">
@@ -25,19 +25,22 @@
                 </div>
                 <div class="col-md-6">
                   <label for="email" class="form-label">Email</label>
-                  <input type="email" class="form-control" id="email" name="email" required />
+                  <input type="email" class="form-control" id="email" name="email" required autocomplete="email" maxlength="254" title="Use a valid Gmail address (@gmail.com)" />
                 </div>
                 <div class="col-md-6">
                   <label for="password" class="form-label">Password</label>
-                  <input type="password" class="form-control" id="password" name="password" minlength="6" required />
+                  <div class="input-group">
+                    <input type="password" class="form-control" id="password" name="password" minlength="6" required autocomplete="new-password" />
+                    <button class="btn btn-outline-secondary" type="button" id="togglePassword" tabindex="-1" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                  </div>
                 </div>
                 <div class="col-md-6">
-                  <label for="urn" class="form-label">URN (numbers only)</label>
-                  <input type="text" class="form-control" id="urn" name="urn" pattern="[0-9]+" required />
+                  <label for="urn" class="form-label">URN (7 digits)</label>
+                  <input type="text" class="form-control" id="urn" name="urn" inputmode="numeric" pattern="\d{7}" maxlength="7" minlength="7" required title="URN must be exactly 7 digits (numbers only)" />
                 </div>
                 <div class="col-md-6">
-                  <label for="crn" class="form-label">CRN (numbers only)</label>
-                  <input type="text" class="form-control" id="crn" name="crn" pattern="[0-9]+" required />
+                  <label for="crn" class="form-label">CRN (7 digits)</label>
+                  <input type="text" class="form-control" id="crn" name="crn" inputmode="numeric" pattern="\d{7}" maxlength="7" minlength="7" required title="CRN must be exactly 7 digits (numbers only)" />
                 </div>
                 <div class="col-md-6">
                   <label for="department" class="form-label">Department</label>
@@ -69,6 +72,47 @@
   </div>
 
   <script>
+    function isValidGmailAddress(email) {
+      var t = email.trim();
+      if (!t) return false;
+      var lower = t.toLowerCase();
+      if (!lower.endsWith('@gmail.com')) return false;
+      if (t.indexOf(' ') !== -1) return false;
+      var local = lower.slice(0, -('@gmail.com'.length));
+      if (!local.length) return false;
+      return /^[a-zA-Z0-9._%+-]+$/.test(local);
+    }
+
+    function digitsOnly(el, maxLen) {
+      el.addEventListener('input', function () {
+        var v = el.value.replace(/\D/g, '').slice(0, maxLen);
+        if (el.value !== v) el.value = v;
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var urnEl = document.getElementById('urn');
+      var crnEl = document.getElementById('crn');
+      if (urnEl) digitsOnly(urnEl, 7);
+      if (crnEl) digitsOnly(crnEl, 7);
+
+      var pwd = document.getElementById('password');
+      var toggle = document.getElementById('togglePassword');
+      if (toggle && pwd) {
+        toggle.addEventListener('click', function () {
+          if (pwd.type === 'password') {
+            pwd.type = 'text';
+            toggle.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            toggle.setAttribute('aria-label', 'Hide password');
+          } else {
+            pwd.type = 'password';
+            toggle.innerHTML = '<i class="fas fa-eye"></i>';
+            toggle.setAttribute('aria-label', 'Show password');
+          }
+        });
+      }
+    });
+
     const departmentSelect = document.getElementById('department');
     const groupSelect = document.getElementById('group');
 
@@ -110,6 +154,21 @@
 
       const formData = new FormData(this);
       const payload = Object.fromEntries(formData.entries());
+      const urn = String(payload.urn || '').trim();
+      const crn = String(payload.crn || '').trim();
+      const emailRaw = String(payload.email || '').trim();
+      if (!/^\d{7}$/.test(urn)) {
+        errorEl.textContent = 'URN must be exactly 7 digits.';
+        return;
+      }
+      if (!/^\d{7}$/.test(crn)) {
+        errorEl.textContent = 'CRN must be exactly 7 digits.';
+        return;
+      }
+      if (!isValidGmailAddress(emailRaw)) {
+        errorEl.textContent = 'Enter a valid email address that ends with @gmail.com';
+        return;
+      }
 
       try {
         const res = await fetch('/register', {
@@ -120,10 +179,10 @@
           },
           body: JSON.stringify({
             name: payload.name,
-            email: payload.email,
+            email: emailRaw.toLowerCase(),
             password: payload.password,
-            urn: payload.urn,
-            crn: payload.crn,
+            urn: urn,
+            crn: crn,
             department: payload.department,
             group: payload.group
           })

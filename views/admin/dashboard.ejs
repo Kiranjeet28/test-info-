@@ -96,6 +96,8 @@
         <h2 class="mb-0"><i class="fas fa-user-shield me-2"></i>Welcome <%= admin.name %></h2>
         <p class="mb-0">Admin Dashboard</p>
       </div>
+          <!-- Feedback Section -->
+         
       <a href="/admin/logout" class="btn btn-light">
         <i class="fas fa-sign-out-alt me-1"></i>Logout
       </a>
@@ -164,11 +166,48 @@
       <% } %>
     </div>
 
-    <!-- View All Users Button -->
-    <div class="mb-4">
+    <!-- View All Users & Feedback Table Buttons -->
+    <div class="mb-4 d-flex gap-2">
       <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#usersTable" aria-expanded="false" aria-controls="usersTable">
         <i class="fas fa-users me-1"></i> View All Users
       </button>
+      <button class="btn btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#feedbackTableCollapse" aria-expanded="false" aria-controls="feedbackTableCollapse">
+        <i class="fas fa-table me-1"></i> View Feedback Table
+      </button>
+    </div>
+
+    <!-- Feedback Table (Collapsed by default, moved here) -->
+    <div class="collapse" id="feedbackTableCollapse">
+      <% if (feedbacks && feedbacks.length === 0) { %>
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No feedback has been submitted yet.
+        </div>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Title</th>
+                <th>Details</th>
+                <th>Contact</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% feedbacks.forEach((feedback, idx) => { %>
+                <tr>
+                  <td><%= idx + 1 %></td>
+                  <td><%= feedback.title %></td>
+                  <td><%= feedback.details %></td>
+                  <td><%= feedback.contact || '-' %></td>
+                  <td><%= feedback.createdAt ? new Date(feedback.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '' %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
     </div>
 
     <!-- Users Table (Collapsed by default) -->
@@ -188,8 +227,12 @@
                 <th>S.No.</th>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Department</th>
+                <th>Group</th>
                 <th>Branch</th>
                 <th>Year</th>
+                <th>URN</th>
+                <th>CRN</th>
                 <th>Subscribed At</th>
                 <th>Action</th>
               </tr>
@@ -200,14 +243,16 @@
                   <td><%= idx + 1 %></td>
                   <td><%= user.name %></td>
                   <td><%= user.email %></td>
+                  <td><%= user.department || '-' %></td>
+                  <td><%= user.group || '-' %></td>
                   <td><%= user.branch %></td>
                   <td><%= user.year %></td>
-                  <!-- <td><%= user.subscribedAt ? new Date(user.subscribedAt).toLocaleString() : '' %></td> -->
+                  <td><%= user.urn %></td>
+                  <td><%= user.crn %></td>
                   <td><%= user.subscribedAt ? new Date(user.subscribedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '' %></td>
-
                   <td>
                     <form action="/admin/remove-user/<%= user._id %>" method="POST" onsubmit="return confirm('Are you sure you want to remove this user?');">
-                                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button type="submit" class="btn btn-danger btn-sm">
                         <i class="fas fa-user-times me-1"></i>Remove
                       </button>
