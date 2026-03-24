@@ -110,6 +110,7 @@
       </div>
       
       <form action="/admin/edit-notice/<%= notice._id %>" method="POST">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="mb-4">
           <label class="form-label">Notice Title</label>
           <input type="text" name="title" class="form-control" value="<%= notice.title %>" placeholder="Enter notice title" required />

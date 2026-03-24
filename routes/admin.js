@@ -5,6 +5,24 @@ const Notice = require('../models/Notice');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
+
+// JWT middleware for admin authentication
+const jwt = require('jsonwebtoken');
+function requireAdminJWT(req, res, next) {
+  const token = req.cookies.admin_token;
+  if (!token) {
+    if (req.method === 'GET') return res.redirect('/admin/login');
+    return res.status(401).json({ error: 'Authentication required.' });
+  }
+  try {
+    req.admin = jwt.verify(token, process.env.JWT_SECRET || 'jwtsecret');
+    next();
+  } catch (err) {
+    if (req.method === 'GET') return res.redirect('/admin/login');
+    return res.status(401).json({ error: 'Invalid or expired token.' });
+  }
+}
+
 // GET: Admin Login Page
 router.get('/login', (req, res) => {
   res.render('admin/login');
@@ -13,14 +31,15 @@ router.get('/login', (req, res) => {
 // POST: Handle Admin Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
   const admin = await Admin.findOne({ email });
   if (!admin) return res.status(401).json({ error: 'Admin not found' });
+  const bcrypt = require('bcryptjs');
   const match = await bcrypt.compare(password, admin.password);
   if (!match) return res.status(401).json({ error: 'Incorrect password' });
 
-  const jwt = require('jsonwebtoken');
   const token = jwt.sign(
-    { id: admin._id, email: admin.email, role: 'admin' },
+    { id: admin._id, email: admin.email, name: admin.name, branch: admin.branch, year: admin.year, role: 'admin' },
     process.env.JWT_SECRET || 'jwtsecret',
     { expiresIn: '1d' }
   );
@@ -35,48 +54,23 @@ router.post('/login', async (req, res) => {
 });
 
 // GET: Admin Dashboard
-router.get('/dashboard', async (req, res) => {
-  const jwt = require('jsonwebtoken');
-  const token = req.cookies.admin_token;
-  let adminPayload = null;
-
-  if (token) {
-    try {
-      adminPayload = jwt.verify(token, process.env.JWT_SECRET || 'jwtsecret');
-    } catch (err) {
-      return res.redirect('/admin/login');
-    }
-  } else {
-    return res.redirect('/admin/login');
-  }
-
+router.get('/dashboard', requireAdminJWT, async (req, res) => {
   const notices = await Notice.find().sort({ date: -1 });
   const users = await User.find();
+  const Feedback = require('../models/Feedback');
+  const feedbacks = await Feedback.find().sort({ createdAt: -1 });
   res.render('admin/dashboard', {
-    admin: adminPayload,
+    admin: req.admin,
     notices,
-    users
+    users,
+    feedbacks
   });
 });
 
 // POST: Handle New Notice Submission
-router.post('/post-notice', async (req, res) => {
-  const jwt = require('jsonwebtoken');
-  const token = req.cookies.admin_token;
-  let adminPayload = null;
-
-  if (token) {
-    try {
-      adminPayload = jwt.verify(token, process.env.JWT_SECRET || 'jwtsecret');
-    } catch (err) {
-      return res.redirect('/admin/login');
-    }
-  } else {
-    return res.redirect('/admin/login');
-  }
-
+router.post('/post-notice', requireAdminJWT, async (req, res) => {
   const { title, content } = req.body;
-  const { name, branch, year } = adminPayload;
+  const { name, branch, year } = req.admin;
   const newNotice = new Notice({
     title,
     message: content,
@@ -91,38 +85,34 @@ router.post('/post-notice', async (req, res) => {
   res.redirect('/admin/dashboard');
 });
 
+
 // DELETE: Delete a notice
-router.post('/delete-notice/:id', async (req, res) => {
-  if (!req.session.admin) return res.redirect('/admin/login');
+router.post('/delete-notice/:id', requireAdminJWT, async (req, res) => {
   await Notice.findByIdAndDelete(req.params.id);
   res.redirect('/admin/dashboard');
 });
 
 // POST: Remove a user
-router.post('/remove-user/:id', async (req, res) => {
-  if (!req.session.admin) return res.redirect('/admin/login');
+router.post('/remove-user/:id', requireAdminJWT, async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
   res.redirect('/admin/dashboard');
 });
 
 // GET: Admin Logout
 router.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/admin/login');
-  });
+  res.clearCookie('admin_token');
+  res.redirect('/admin/login');
 });
 
 // GET: Show Edit Notice Form
-router.get('/edit-notice/:id', async (req, res) => {
-  if (!req.session.admin) return res.redirect('/admin/login');
+router.get('/edit-notice/:id', requireAdminJWT, async (req, res) => {
   const notice = await Notice.findById(req.params.id);
   if (!notice) return res.send('Notice not found');
-  res.render('admin/editNotice', { admin: req.session.admin, notice });
+  res.render('admin/editNotice', { admin: req.admin, notice });
 });
 
 // POST: Handle Edit Notice Submission
-router.post('/edit-notice/:id', async (req, res) => {
-  if (!req.session.admin) return res.redirect('/admin/login');
+router.post('/edit-notice/:id', requireAdminJWT, async (req, res) => {
   const { title, content } = req.body;
   await Notice.findByIdAndUpdate(req.params.id, {
     title,
