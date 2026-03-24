@@ -209,6 +209,7 @@
         <div class="navbar-nav ms-auto text-center">
           <a class="nav-link active" href="/">Home</a>
           <a class="nav-link" href="/timetable">Timetable</a>
+          <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#feedbackModal">Feedback</a>
           <% if (!currentUser) { %>
             <a class="nav-link" href="/login">Login</a>
           <% } %>
@@ -216,6 +217,41 @@
       </div>
     </div>
   </nav>
+
+
+  <!-- Feedback Modal -->
+  <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="feedbackModalLabel"><i class="fas fa-comment-dots me-2"></i>Submit Feedback</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="feedbackForm" autocomplete="off">
+          <input type="hidden" name="_csrf" id="csrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="feedbackTitle" class="form-label">Title</label>
+              <input type="text" class="form-control" id="feedbackTitle" name="title" maxlength="100" required placeholder="Enter a short title">
+            </div>
+            <div class="mb-3">
+              <label for="feedbackDetails" class="form-label">Details</label>
+              <textarea class="form-control" id="feedbackDetails" name="details" rows="4" maxlength="500" required placeholder="Describe your feedback"></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="feedbackContact" class="form-label">Get your problem custom support (Contact Email or Phone)</label>
+              <input type="text" class="form-control" id="feedbackContact" name="contact" maxlength="100" placeholder="Enter your email or phone (optional)">
+            </div>
+            <div id="feedbackAlert" class="alert d-none" role="alert"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <div class="container py-5">
 
@@ -331,6 +367,60 @@
 
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Feedback form AJAX submission
+    document.addEventListener('DOMContentLoaded', function () {
+      const feedbackForm = document.getElementById('feedbackForm');
+      const feedbackAlert = document.getElementById('feedbackAlert');
+      const feedbackModal = document.getElementById('feedbackModal');
+      if (feedbackForm) {
+        feedbackForm.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          feedbackAlert.className = 'alert d-none';
+          const title = feedbackForm.title.value.trim();
+          const details = feedbackForm.details.value.trim();
+          const contact = feedbackForm.contact.value.trim();
+          const csrfToken = document.getElementById('csrfToken').value;
+          if (!title || !details) {
+            feedbackAlert.className = 'alert alert-danger';
+            feedbackAlert.textContent = 'Please fill in both fields.';
+            return;
+          }
+          try {
+            const res = await fetch('/feedback', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'CSRF-Token': csrfToken
+              },
+              body: JSON.stringify({ title, details, contact })
+            });
+            const json = await res.json();
+            if (res.ok) {
+              feedbackAlert.className = 'alert alert-success';
+              feedbackAlert.textContent = json.message || 'Feedback submitted!';
+              feedbackForm.reset();
+              setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(feedbackModal);
+                if (modal) modal.hide();
+                feedbackAlert.className = 'alert d-none';
+              }, 1500);
+            } else if (res.status === 429) {
+              feedbackAlert.className = 'alert alert-warning';
+              feedbackAlert.textContent = json.error || 'You have already submitted feedback.';
+            } else {
+              feedbackAlert.className = 'alert alert-danger';
+              feedbackAlert.textContent = json.error || 'Failed to submit feedback.';
+            }
+          } catch (err) {
+            feedbackAlert.className = 'alert alert-danger';
+            feedbackAlert.textContent = 'Network error. Try again later.';
+          }
+        });
+      }
+    });
+  </script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       // Get the current visit count from localStorage
@@ -731,7 +821,12 @@
 
       <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
         <small class="text-white">© <span id="currentYear"></span> InfoCascade. All rights reserved.</small>
-        <small class="text-white">Designed & Developed by Karan Singh</small>
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+            <i class="fas fa-comment-dots me-1"></i> Feedback
+          </button>
+          <small class="text-white mb-0">Designed & Developed by Karan Singh</small>
+        </div>
       </div>
     </div>
   </footer>
