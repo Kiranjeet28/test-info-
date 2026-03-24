@@ -174,96 +174,48 @@
       background: linear-gradient(180deg, #3498db, #2c3e50);
       border-radius: 10px;
     }
+
+    .student-class-card {
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #eef6ff, #ffffff);
+      box-shadow: 0 8px 22px rgba(44, 62, 80, 0.08);
+      margin-bottom: 1.5rem;
+    }
+
+    .class-chip {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 0.15rem 0.6rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-right: 0.35rem;
+      background: #eaf2fb;
+      color: #2c3e50;
+    }
+
   </style>
 </head>
 
 <body class="bg-light">
-
-  <!-- Subscription Modal -->
-  <div class="modal fade" id="subscriptionModal" tabindex="-1" aria-labelledby="subscriptionModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="subscriptionModalLabel"><i class="fas fa-envelope me-2"></i>Subscribe to get Notices via Email
-          </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p>Get instant updates about college events, exams, and important announcements</p>
-          <form id="subscriptionForm" action="/subscribe" method="POST">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label fw-bold"><i class="fas fa-user me-1"></i> Name</label>
-                  <input type="text" name="name" class="form-control" placeholder="Enter your full name" required />
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label fw-bold"><i class="fas fa-envelope me-1"></i> Email</label>
-                  <input type="email" name="email" class="form-control" placeholder="Enter your email address"
-                    required />
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label fw-bold"><i class="fas fa-code-branch me-1"></i> Branch</label>
-                  <select name="branch" class="form-select" required>
-                    <option value="" selected disabled>Select your branch</option>
-                    <option value="CSE">Computer Science & Engineering (CSE)</option>
-                    <option value="IT">Information Technology (IT)</option>
-                    <option value="ECE">Electronics & Communication Engineering (ECE)</option>
-                    <option value="EE">Electrical Engineering (EE)</option>
-                    <option value="ME">Mechanical Engineering (ME)</option>
-                    <option value="CE">Civil Engineering (CE)</option>
-                    <option value="Production">Production Engineering</option>
-                    <option value="RoboticsAI">Robotics & Artificial Intelligence</option>
-                    <option value="BCA">Bachelor of Computer Applications (BCA)</option>
-                    <option value="BBA">Bachelor of Business Administration (BBA)</option>
-                    <option value="BVoc">Bachelor of Vocation (Interior Design)</option>
-                    <option value="MTechCSE">M.Tech in Computer Science & Engineering</option>
-                    <option value="MTechIT">M.Tech in Computer Science & Information Technology</option>
-                    <option value="MTechECE">M.Tech in Electronics & Communication Engineering</option>
-                    <option value="MTechPower">M.Tech in Power Engineering</option>
-                    <option value="MTechProduction">M.Tech in Production Engineering</option>
-                    <option value="MTechStructural">M.Tech in Structural Engineering</option>
-                    <option value="MTechEnvironmental">M.Tech in Environmental Engineering</option>
-                    <option value="MTechStructuralEngg">M.Tech in Structural Engineering</option>
-                    <option value="MTechComputerScienceIT">M.Tech in Computer Science & IT</option>
-                    <option value="MBA">Master of Business Administration (MBA)</option>
-                    <option value="MCA">Master of Computer Applications (MCA)</option>
-                    <option value="MScPhysics">M.Sc in Physics</option>
-                    <option value="MScChemistry">M.Sc in Chemistry</option>
-                    <option value="PhD">Ph.D Programs (Civil, Mechanical, Electrical Engineering)</option>
-
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label fw-bold"><i class="fas fa-calendar me-1"></i> Year</label>
-                  <select name="year" class="form-select" required>
-                    <option value="" selected disabled>Select your year</option>
-                    <option value="1">First Year</option>
-                    <option value="2">Second Year</option>
-                    <option value="3">Third Year</option>
-                    <option value="4">Fourth Year</option>
-                    <option value="4">Fifth Year</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div class="d-grid gap-2 mt-3">
-              <button type="submit" class="btn btn-subscribe btn-lg">
-                <i class="fas fa-paper-plane me-2"></i> Subscribe Now
-              </button>
-            </div>
-          </form>
+  <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">InfoCascade</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+        aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNavbar">
+        <div class="navbar-nav ms-auto text-center">
+          <a class="nav-link active" href="/">Home</a>
+          <a class="nav-link" href="/timetable">Timetable</a>
+          <% if (!currentUser) { %>
+            <a class="nav-link" href="/login">Login</a>
+          <% } %>
         </div>
       </div>
     </div>
-  </div>
+  </nav>
 
   <div class="container py-5">
 
@@ -279,14 +231,54 @@
 
     <!-- Top Navigation -->
     <div class="top-nav">
-      <button class="btn btn-subscribe" data-bs-toggle="modal" data-bs-target="#subscriptionModal">
-        <i class="fas fa-bell me-1"></i> Subscribe
-      </button>
-       <a href="/admin/login" class="btn btn-primary"><i class="fas fa-lock me-1"></i> Admin Login</a>
+      <a href="/admin/login" class="btn btn-primary"><i class="fas fa-lock me-1"></i> Admin Login</a>
     </div>
 
 
     <!-- Notices Section -->
+    <% if (currentUser && studentClassSummary) { %>
+      <div class="row mb-3">
+        <div class="col-lg-8 mx-auto">
+          <div class="card student-class-card">
+            <div class="card-body">
+              <h5 class="mb-2">
+                <i class="fas fa-user-clock text-primary me-2"></i>Your Live Class Update
+              </h5>
+              <div class="small text-muted mb-3">
+                <strong><%= studentClassSummary.departmentLabel %></strong> •
+                Group <strong><%= studentClassSummary.groupName %></strong> •
+                <%= studentClassSummary.dayName %>
+              </div>
+
+              <div class="mb-2">
+                <div class="fw-semibold text-secondary mb-1">Present Class</div>
+                <% if (studentClassSummary.presentClass) { %>
+                  <span class="class-chip"><%= studentClassSummary.presentClass.time || '--:--' %></span>
+                  <span>
+                    <%= (studentClassSummary.presentClass.entries && studentClassSummary.presentClass.entries[0] && studentClassSummary.presentClass.entries[0].subject) || (studentClassSummary.presentClass.isFree ? 'Free Period' : 'Class') %>
+                  </span>
+                <% } else { %>
+                  <span class="text-muted">No class running right now.</span>
+                <% } %>
+              </div>
+
+              <div>
+                <div class="fw-semibold text-secondary mb-1">Next Class</div>
+                <% if (studentClassSummary.nextClass) { %>
+                  <span class="class-chip"><%= studentClassSummary.nextClass.time || '--:--' %></span>
+                  <span>
+                    <%= (studentClassSummary.nextClass.entries && studentClassSummary.nextClass.entries[0] && studentClassSummary.nextClass.entries[0].subject) || (studentClassSummary.nextClass.isFree ? 'Free Period' : 'Class') %>
+                  </span>
+                <% } else { %>
+                  <span class="text-muted">No more classes scheduled for today.</span>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
     <div class="row mb-5">
       <div class="col-lg-8 mx-auto">
         <h2 class="text-center mb-4"><i class="fas fa-bullhorn text-accent me-2"></i>Latest Updates</h2>
@@ -322,20 +314,8 @@
                 <% } %>
       </div>
     </div>
-  </div>
 
-  <!-- Toast Notification -->
-<div class="position-fixed top-0 end-0 p-3" style="z-index: 1100">
-  <div id="subscriptionToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
-    <div class="d-flex">
-      <div class="toast-body" id="toastMsg">
-        <!-- Message will be set by JS -->
-      </div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-    </div>
   </div>
-</div>
-
 
   <!-- <div id="visitCounter">
   Visits: <span id="visitCount">0</span>
@@ -346,43 +326,6 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      // Show the subscription modal automatically on page load
-      var myModal = new bootstrap.Modal(document.getElementById('subscriptionModal'));
-      myModal.show();
-
-      // AJAX subscription form
-      const form = document.getElementById('subscriptionForm');
-      form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-
-        try {
-          const res = await fetch('/subscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
-          const text = await res.text();
-
-          // Show toast with response message
-          document.getElementById('toastMsg').textContent = text;
-          var toast = new bootstrap.Toast(document.getElementById('subscriptionToast'));
-          toast.show();
-
-          // Close the modal
-          var modal = bootstrap.Modal.getInstance(document.getElementById('subscriptionModal'));
-          modal.hide();
-
-          // Reset the form
-          form.reset();
-        } catch (err) {
-          document.getElementById('toastMsg').textContent = "Something went wrong. Please try again.";
-          var toast = new bootstrap.Toast(document.getElementById('subscriptionToast'));
-          toast.show();
-        }
-      });
-
       // Get the current visit count from localStorage
       let visitCount = localStorage.getItem('visitCount');
 
@@ -398,7 +341,10 @@
       localStorage.setItem('visitCount', visitCount);
 
       // Display the visit count in the counter
-      document.getElementById('visitCount').textContent = visitCount;
+      const visitCountEl = document.getElementById('visitCount');
+      if (visitCountEl) {
+        visitCountEl.textContent = visitCount;
+      }
 
       // Back to top button functionality
       const backToTopBtn = document.getElementById('backToTop');
