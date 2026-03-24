@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Registration | InfoCascade</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-primary text-white text-center">
+            <h3 class="mb-0">Student Registration</h3>
+          </div>
+          <div class="card-body p-4">
+            <form action="/register" method="POST" id="registerForm">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="name" class="form-label">Name</label>
+                  <input type="text" class="form-control" id="name" name="name" required />
+                </div>
+                <div class="col-md-6">
+                  <label for="email" class="form-label">Email</label>
+                  <input type="email" class="form-control" id="email" name="email" required />
+                </div>
+                <div class="col-md-6">
+                  <label for="password" class="form-label">Password</label>
+                  <input type="password" class="form-control" id="password" name="password" minlength="6" required />
+                </div>
+                <div class="col-md-6">
+                  <label for="urn" class="form-label">URN (numbers only)</label>
+                  <input type="text" class="form-control" id="urn" name="urn" pattern="[0-9]+" required />
+                </div>
+                <div class="col-md-6">
+                  <label for="crn" class="form-label">CRN (numbers only)</label>
+                  <input type="text" class="form-control" id="crn" name="crn" pattern="[0-9]+" required />
+                </div>
+                <div class="col-md-6">
+                  <label for="department" class="form-label">Department</label>
+                  <select class="form-select" id="department" name="department" required>
+                    <option value="">Select department</option>
+                    <% (departmentOptions || []).forEach((department) => { %>
+                      <option value="<%= department.key %>"><%= department.label %></option>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="col-12">
+                  <label for="group" class="form-label">Group</label>
+                  <select class="form-select" id="group" name="group" required disabled>
+                    <option value="">Select department first</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-success w-100 mt-4">Register</button>
+            </form>
+            <div id="registerError" class="text-danger text-center mt-3"></div>
+            <div id="registerSuccess" class="text-success text-center mt-3"></div>
+            <div class="mt-3 text-center">
+              <a href="/login">Already have an account? Login</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const departmentSelect = document.getElementById('department');
+    const groupSelect = document.getElementById('group');
+
+    async function loadGroups(departmentKey) {
+      groupSelect.innerHTML = '<option value="">Loading groups...</option>';
+      groupSelect.disabled = true;
+      try {
+        const res = await fetch(`/api/groups/${departmentKey}`);
+        const data = await res.json();
+        const groups = data.groups || [];
+        if (!groups.length) {
+          groupSelect.innerHTML = '<option value="">No groups found</option>';
+          return;
+        }
+        groupSelect.innerHTML = '<option value="">Select group</option>' +
+          groups.map((group) => `<option value="${group}">${group}</option>`).join('');
+        groupSelect.disabled = false;
+      } catch (error) {
+        groupSelect.innerHTML = '<option value="">Unable to load groups</option>';
+      }
+    }
+
+    departmentSelect.addEventListener('change', function () {
+      const departmentKey = this.value;
+      if (!departmentKey) {
+        groupSelect.innerHTML = '<option value="">Select department first</option>';
+        groupSelect.disabled = true;
+        return;
+      }
+      loadGroups(departmentKey);
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const errorEl = document.getElementById('registerError');
+      const successEl = document.getElementById('registerSuccess');
+      errorEl.textContent = '';
+      successEl.textContent = '';
+
+      const formData = new FormData(this);
+      const payload = Object.fromEntries(formData.entries());
+
+      try {
+        const res = await fetch('/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'CSRF-Token': payload._csrf
+          },
+          body: JSON.stringify({
+            name: payload.name,
+            email: payload.email,
+            password: payload.password,
+            urn: payload.urn,
+            crn: payload.crn,
+            department: payload.department,
+            group: payload.group
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          if (Array.isArray(data.errors) && data.errors.length > 0) {
+            errorEl.textContent = data.errors[0].msg || 'Registration failed.';
+          } else {
+            errorEl.textContent = data.error || 'Registration failed.';
+          }
+          return;
+        }
+
+        successEl.textContent = 'Registration successful! Redirecting to login...';
+        setTimeout(() => { window.location.href = '/login'; }, 900);
+      } catch (error) {
+        errorEl.textContent = 'Network error. Please try again.';
+      }
+    });
+  </script>
+</body>
+</html>
