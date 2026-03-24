@@ -10,11 +10,11 @@ mongoose.connect(process.env.MONGO_URL)
 
 async function createAdmin() {
 
-  // Store password as plain text (not secure, for dev only)
+  const hashedPassword = await bcrypt.hash('Jayant@110125', 10); // change this password
   const admin = new Admin({
     name: "Jayant Kumawat",
     email: "jayantkumawat802@gmail.com",
-    password: "Jayant@110125",
+    password: hashedPassword,
     year: "3rd",
     branch: "CSE"
   });

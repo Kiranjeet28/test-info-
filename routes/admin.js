@@ -34,8 +34,9 @@ router.post('/login', async (req, res) => {
 
   const admin = await Admin.findOne({ email });
   if (!admin) return res.status(401).json({ error: 'Admin not found' });
-  // Compare plain text password (no hashing)
-  if (password !== admin.password) return res.status(401).json({ error: 'Incorrect password' });
+  const bcrypt = require('bcryptjs');
+  const match = await bcrypt.compare(password, admin.password);
+  if (!match) return res.status(401).json({ error: 'Incorrect password' });
 
   const token = jwt.sign(
     { id: admin._id, email: admin.email, name: admin.name, branch: admin.branch, year: admin.year, role: 'admin' },
