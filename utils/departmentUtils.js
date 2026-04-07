@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 
 const GROUPS_DIR = path.join(__dirname, '..', 'web', 'group');
 
@@ -18,14 +19,14 @@ function fetchDepartments() {
   return DEPARTMENT_OPTIONS;
 }
 
-function fetchGroups(departmentKey) {
-  const filePath = path.join(GROUPS_DIR, `${departmentKey}.json`);
-  if (!fs.existsSync(filePath)) return [];
+async function fetchGroups(departmentKey) {
+  const githubUrl = `https://raw.githubusercontent.com/Kiranjeet28/infocascade-data/main/web/group/${departmentKey}.json`;
   try {
-    const raw = fs.readFileSync(filePath, 'utf8');
-    const parsed = JSON.parse(raw);
+    const response = await axios.get(githubUrl);
+    const parsed = response.data;
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
+    console.error(`Error fetching groups for ${departmentKey}: ${error.message}`);
     return [];
   }
 }
