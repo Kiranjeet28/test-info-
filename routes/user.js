@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
+const axios = require('axios');
 const Notice = require('../models/Notice');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
@@ -41,10 +42,15 @@ const DEPARTMENT_CONFIG = [
   { key: 'mechanical', label: 'Mechanical Engineering', file: 'timetable_mechanical.json' }
 ];
 
-function readTimetableFile(fileName) {
-  const absolutePath = path.join(__dirname, '..', 'web', fileName);
-  const raw = fs.readFileSync(absolutePath, 'utf8');
-  return JSON.parse(raw);
+async function readTimetableFile(fileName) {
+  const githubUrl = `https://raw.githubusercontent.com/Kiranjeet28/infocascade-data/main/web/${fileName}`;
+  try {
+    const response = await axios.get(githubUrl);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching timetable from GitHub: ${error.message}`);
+    throw error;
+  }
 }
 
 function pickFirstAvailableGroup(timetableMap) {
@@ -105,28 +111,30 @@ function normalizeClassesByDay(groupData) {
   return dayBuckets;
 }
 
-function loadDepartmentTimetables() {
-  return DEPARTMENT_CONFIG.map((department) => {
+async function loadDepartmentTimetables() {
+  const results = [];
+  for (const department of DEPARTMENT_CONFIG) {
     try {
-      const payload = readTimetableFile(department.file);
+      const payload = await readTimetableFile(department.file);
       const { groupName, groupData } = pickFirstAvailableGroup(payload.timetable);
-      return {
+      results.push({
         key: department.key,
         label: department.label,
         groupName,
         days: normalizeClassesByDay(groupData),
         sourceUrl: payload.url || null
-      };
+      });
     } catch (error) {
-      return {
+      results.push({
         key: department.key,
         label: department.label,
         groupName: null,
         days: {},
         sourceUrl: null
-      };
+      });
     }
-  });
+  }
+  return results;
 }
 
 function getDepartmentOptions() {
@@ -158,10 +166,10 @@ function getDepartmentByKey(departmentKey) {
   return DEPARTMENT_CONFIG.find((item) => item.key === departmentKey) || null;
 }
 
-function buildDepartmentTimetableForGroup(departmentKey, requestedGroup) {
+async function buildDepartmentTimetableForGroup(departmentKey, requestedGroup) {
   const department = getDepartmentByKey(departmentKey);
   if (!department) return null;
-  const payload = readTimetableFile(department.file);
+  const payload = await readTimetableFile(department.file);
   const timetableMap = payload.timetable || {};
   const groupNames = Object.keys(timetableMap);
   const matchedGroup = groupNames.find((name) => name.toLowerCase() === String(requestedGroup || '').toLowerCase()) || null;
@@ -302,7 +310,7 @@ router.post('/register',
     }
     const { name, password, urn, crn, group, department } = req.body;
     const email = String(req.body.email).trim().toLowerCase();
-    const groups = getGroupsByDepartment(department);
+    const groups = await getGroupsByDepartment(department);
     if (!groups.includes(group)) {
       return res.status(400).json({ error: 'Selected group does not belong to selected department.' });
     }
@@ -373,7 +381,7 @@ router.get('/', async (req, res) => {
   let studentClassSummary = null;
 
   if (currentUser && currentUser.department && currentUser.group) {
-    const timetablePayload = buildDepartmentTimetableForGroup(currentUser.department, currentUser.group);
+    const timetablePayload = await buildDepartmentTimetableForGroup(currentUser.department, currentUser.group);
     if (timetablePayload) {
       studentClassSummary = {
         departmentLabel: timetablePayload.department.label,
@@ -402,13 +410,18 @@ router.get('/api/departments', (req, res) => {
   res.json({ departments: getDepartmentOptions() });
 });
 
-router.get('/api/groups/:department', (req, res) => {
+router.get('/api/groups/:department', async (req, res) => {
   const departmentKey = req.params.department;
-  const groups = getGroupsByDepartment(departmentKey);
-  res.json({ department: departmentKey, groups });
+  try {
+    const groups = await getGroupsByDepartment(departmentKey);
+    res.json({ department: departmentKey, groups });
+  } catch (error) {
+    console.error('Error fetching groups:', error);
+    res.status(500).json({ error: 'Failed to fetch groups' });
+  }
 });
 
-router.get('/api/timetable/:department/:group', (req, res) => {
+router.get('/api/timetable/:department/:group', async (req, res) => {
   const department = req.params.department;
   const group = req.params.group;
   const cacheKey = `${department}:${group}`;
@@ -417,13 +430,18 @@ router.get('/api/timetable/:department/:group', (req, res) => {
     return res.json({ ...cached, cache: { hit: true, ttlMs: TIMETABLE_CACHE_TTL_MS } });
   }
 
-  const payload = buildDepartmentTimetableForGroup(department, group);
-  if (!payload) {
-    return res.status(404).json({ error: 'Timetable not found for the requested department/group.' });
-  }
+  try {
+    const payload = await buildDepartmentTimetableForGroup(department, group);
+    if (!payload) {
+      return res.status(404).json({ error: 'Timetable not found for the requested department/group.' });
+    }
 
-  setCachedTimetable(cacheKey, payload);
-  return res.json({ ...payload, cache: { hit: false, ttlMs: TIMETABLE_CACHE_TTL_MS } });
+    setCachedTimetable(cacheKey, payload);
+    return res.json({ ...payload, cache: { hit: false, ttlMs: TIMETABLE_CACHE_TTL_MS } });
+  } catch (error) {
+    console.error('Error fetching timetable:', error);
+    res.status(500).json({ error: 'Failed to fetch timetable' });
+  }
 });
 
 // Contact form POST
