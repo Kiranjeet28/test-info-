@@ -3,6 +3,7 @@ const router = express.Router();
 const Admin = require('../models/Admin');
 const Notice = require('../models/Notice');
 const User = require('../models/User');
+const Link = require('../models/Link');
 const bcrypt = require('bcryptjs');
 
 
@@ -120,6 +121,90 @@ router.post('/edit-notice/:id', requireAdminJWT, async (req, res) => {
     date: new Date()
   });
   res.redirect('/admin/dashboard');
+});
+
+// ===== QUICK LINKS MANAGEMENT =====
+
+// GET: View all links
+router.get('/links', requireAdminJWT, async (req, res) => {
+  try {
+    const links = await Link.find().sort({ category: 1, createdAt: -1 });
+    res.render('admin/links', { links, csrfToken: req.csrfToken ? req.csrfToken() : '' });
+  } catch (error) {
+    console.error('Error fetching links:', error);
+    res.status(500).send('Error fetching links');
+  }
+});
+
+// GET: Add link form
+router.get('/add-link', requireAdminJWT, (req, res) => {
+  res.render('admin/addLink', { csrfToken: req.csrfToken ? req.csrfToken() : '' });
+});
+
+// POST: Add new link
+router.post('/add-link', requireAdminJWT, async (req, res) => {
+  try {
+    const { title, url, category, icon, description } = req.body;
+
+    const link = new Link({
+      title,
+      url,
+      category: category || 'Other',
+      icon: icon || 'fa-link',
+      description
+    });
+
+    await link.save();
+    res.redirect('/admin/links');
+  } catch (error) {
+    console.error('Error adding link:', error);
+    res.status(500).send('Error adding link');
+  }
+});
+
+// GET: Edit link form
+router.get('/edit-link/:id', requireAdminJWT, async (req, res) => {
+  try {
+    const link = await Link.findById(req.params.id);
+    if (!link) {
+      return res.status(404).send('Link not found');
+    }
+    res.render('admin/editLink', { link, csrfToken: req.csrfToken ? req.csrfToken() : '' });
+  } catch (error) {
+    console.error('Error fetching link:', error);
+    res.status(500).send('Error fetching link');
+  }
+});
+
+// POST: Update link
+router.post('/edit-link/:id', requireAdminJWT, async (req, res) => {
+  try {
+    const { title, url, category, icon, description } = req.body;
+
+    await Link.findByIdAndUpdate(req.params.id, {
+      title,
+      url,
+      category: category || 'Other',
+      icon: icon || 'fa-link',
+      description
+    });
+
+    res.redirect('/admin/links');
+  } catch (error) {
+    console.error('Error updating link:', error);
+    res.status(500).send('Error updating link');
+  }
+});
+
+// POST: Delete link
+router.post('/delete-link/:id', requireAdminJWT, async (req, res) => {
+  try {
+    await Link.findByIdAndDelete(req.params.id);
+    res.redirect('/admin/links');
+  } catch (error) {
+    console.error('Error deleting link:', error);
+    res.status(500).send('Error deleting link');
+  }
 });
 
 module.exports = router;

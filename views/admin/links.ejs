@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manage Quick Links - Admin</title>
+  <link rel="icon" href="/images/Infocascade.png" type="image/png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2c3e50;
+      --accent-color: #e74c3c;
+      --success-color: #27ae60;
+    }
+
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      padding: 2rem;
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      margin: 0;
+    }
+
+    .btn-add {
+      background-color: var(--success-color);
+      border-color: var(--success-color);
+      font-weight: bold;
+    }
+
+    .btn-add:hover {
+      background-color: #229954;
+      border-color: #229954;
+    }
+
+    .links-table {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .table {
+      margin-bottom: 0;
+    }
+
+    .table thead {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+    }
+
+    .table tbody tr:hover {
+      background-color: #f0f8ff;
+    }
+
+    .badge-college {
+      background-color: #3498db;
+    }
+
+    .badge-academics {
+      background-color: #9b59b6;
+    }
+
+    .badge-placement {
+      background-color: #e74c3c;
+    }
+
+    .badge-other {
+      background-color: #95a5a6;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-sm {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+    }
+
+    .btn-edit {
+      background-color: #3498db;
+      border-color: #3498db;
+      color: white;
+    }
+
+    .btn-edit:hover {
+      background-color: #2980b9;
+    }
+
+    .btn-delete {
+      background-color: #e74c3c;
+      border-color: #e74c3c;
+      color: white;
+    }
+
+    .btn-delete:hover {
+      background-color: #c0392b;
+    }
+
+    .back-button {
+      margin-bottom: 1rem;
+    }
+
+    .back-button a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .back-button a:hover {
+      color: var(--secondary-color);
+    }
+
+    .no-links {
+      text-align: center;
+      padding: 3rem;
+      color: #999;
+    }
+
+    .no-links i {
+      font-size: 3rem;
+      color: #ddd;
+      margin-bottom: 1rem;
+    }
+
+    .url-cell {
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .url-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .url-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-4">
+    <div class="back-button">
+      <a href="/admin/dashboard">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+
+    <div class="header">
+      <h1><i class="fas fa-link"></i> Manage Quick Links</h1>
+      <a href="/admin/add-link" class="btn btn-add">
+        <i class="fas fa-plus"></i> Add New Link
+      </a>
+    </div>
+
+    <% if (links && links.length > 0) { %>
+    <div class="links-table">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>URL</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% links.forEach(link => { %>
+          <tr>
+            <td><strong><%= link.title %></strong></td>
+            <td>
+              <div class="url-cell" title="<%= link.url %>">
+                <a href="<%= link.url %>" target="_blank" rel="noopener noreferrer" class="url-link">
+                  <%= link.url %>
+                </a>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-<%= link.category.toLowerCase() %>">
+                <%= link.category %>
+              </span>
+            </td>
+            <td><%= link.description || '-' %></td>
+            <td>
+              <div class="action-buttons">
+                <a href="/admin/edit-link/<%= link._id %>" class="btn btn-sm btn-edit">
+                  <i class="fas fa-edit"></i> Edit
+                </a>
+                <form method="POST" action="/admin/delete-link/<%= link._id %>" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this link?');">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="btn btn-sm btn-delete">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <% } else { %>
+    <div class="links-table">
+      <div class="no-links">
+        <i class="fas fa-link"></i>
+        <p>No quick links found. <a href="/admin/add-link" style="color: var(--primary-color); font-weight: bold;">Add your first link</a></p>
+      </div>
+    </div>
+    <% } %>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

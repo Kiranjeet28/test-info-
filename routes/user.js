@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const axios = require('axios');
 const Notice = require('../models/Notice');
 const User = require('../models/User');
+const Link = require('../models/Link');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
@@ -467,6 +468,17 @@ router.post('/contact', async (req, res) => {
   } catch (err) {
     console.error('[/contact] send error:', err);
     return res.status(500).json({ error: 'Unable to send message at this time.' });
+  }
+});
+
+// Quick Links Route
+router.get('/links', requireUserJWT, async (req, res) => {
+  try {
+    const links = await Link.find().sort({ category: 1, createdAt: -1 });
+    res.render('user/links', { links, csrfToken: req.csrfToken ? req.csrfToken() : '' });
+  } catch (error) {
+    console.error('Error fetching links:', error);
+    res.status(500).send('Error fetching links');
   }
 });
 
